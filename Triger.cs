@@ -3,24 +3,38 @@ using UnityEngine;
 
 public class Triger : MonoBehaviour
 {
-    [SerializeField] private AudioClip _audioClip;
+    private float _target;
+    private float _minVolume = 0;
+    private float _stepUpVolume = 0.01f;
+    private Coroutine _coroutine;
 
-    private float _maxVolume;
+    private AudioSource _audioSource => GetComponent<AudioSource>();
 
-    private AudioSource audioSource => GetComponent<AudioSource>();
+    private void Start()
+    {
+        _audioSource?.Stop();
+    }
 
     private void OnTriggerEnter(Collider criminal)
     {
         if (criminal.TryGetComponent(out Rogue _))
         {
-            _maxVolume = 1;
+            _target = 1;
 
-            if (!audioSource.isPlaying)
+            _audioSource.Play();
+
+            _coroutine = StartCoroutine(ChangeVolume());
+        }
+    }
+
+    private void OnTriggerStay(Collider criminal)
+    {
+        if (criminal.TryGetComponent(out Rogue _))
+        {
+            if (_audioSource.volume >= _target)
             {
-                audioSource.PlayOneShot(_audioClip, audioSource.volume);
+                StopCoroutine(_coroutine);
             }
-
-            StartCoroutine(ChangeVolume());
         }
     }
 
@@ -28,23 +42,21 @@ public class Triger : MonoBehaviour
     {
         if (criminal.TryGetComponent(out Rogue _))
         {
-            _maxVolume = 0;
+            _target = 0;
         }
     }
 
     private IEnumerator ChangeVolume()
     {
         float delay = 0.1f;
-        float stepUpVolume = 0.01f;
-        float minVolume = 0;
-
+        
         WaitForSeconds wait = new(delay);
 
         while (enabled)
         {
-            audioSource.volume = minVolume;
+            _audioSource.volume = _minVolume;
 
-            minVolume = Mathf.MoveTowards(minVolume, _maxVolume, stepUpVolume);
+            _minVolume = Mathf.MoveTowards(_minVolume, _target, _stepUpVolume);
 
             yield return wait;
         }
