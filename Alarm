@@ -1,0 +1,71 @@
+using System.Collections;
+using UnityEngine;
+
+[RequireComponent(typeof(AudioSource))]
+
+public class Alarm : MonoBehaviour
+{
+    private AudioSource _audioSource;
+    private Coroutine _coroutine;
+    private float _startPosition;
+    private float _stepUpVolume;
+    private int _maxVolume;
+    private float _target;
+
+    private void Start()
+    {
+        _audioSource = GetComponent<AudioSource>();
+        _maxVolume = 1;
+        _stepUpVolume = 0.01f;
+    }
+
+    public void Turn()
+    {
+        if (_audioSource.isPlaying == false)
+        {
+            _audioSource.Play();
+        }
+
+        _target = _maxVolume;
+
+        _coroutine = StartCoroutine(ChangeVolume());
+
+        if (_startPosition >= _maxVolume)
+        {
+            StopCoroutine(_coroutine);
+        }
+    }
+
+    public void ChangeTarget()
+    {
+        _target = 0;
+    }
+
+    private void Mute()
+    {
+        if (_startPosition <= 0)
+        {
+            _audioSource?.Stop();
+
+            StopCoroutine(_coroutine);
+        }
+    }
+
+    private IEnumerator ChangeVolume()
+    {
+        float delay = 0.1f;
+
+        WaitForSeconds wait = new(delay);
+
+        while (enabled)
+        {
+            _audioSource.volume = _startPosition;
+
+            _startPosition = Mathf.MoveTowards(_startPosition, _target, _stepUpVolume);
+
+            Mute();
+            Debug.Log(_maxVolume);
+            yield return wait;
+        }
+    }
+}
